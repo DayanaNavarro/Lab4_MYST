@@ -9,40 +9,81 @@
 # -- --------------------------------------------------------------------------------------------------- -- #
 """
 
-import pandas as pd
-import data as dt
+import ccxt
+import pandas as pd 
+import numpy as np
+import plotly.graph_objects as go
+from datetime import datetime
+import collections
+import functions as fn
 
-# -- TEST 1 : 
-# verify that the script is being read
-print(dt.dict_test)
 
-# -- TEST 2 :
-# verify that installed pandas module works correctly
-df_dict_test = pd.DataFrame(dt.dict_test, index=[0, 1])
-print(df_dict_test)
+cryptos=['BTC/USDT','BTC/USDC','ETH/USDT']
+seconds=20
+limite=20
+exchanges=[ccxt.bitmart(),ccxt.bitforex(),ccxt.bibox()]
 
-# -- TEST 3 :
-# verify you can use plotly and visualize plots in jupyter notebook
 
-import chart_studio.plotly as py   # various tools (jupyter offline print)
-import plotly.graph_objects as go  # plotting engine
+#------ Libro de ordenes
 
-# example data
-df = pd.DataFrame({'column_a': [1, 2, 3, 4, 5], 'column_b': [1, 2, 3, 4, 5]})
-# basic plotly plot
-data = [go.Bar(x=df['column_a'], y=df['column_b'])]
-# instruction to view it inside jupyter
-py.iplot(data, filename='jupyter-basic_bar')
-# (alternatively) instruction to view it in web app of plotly
-py.plot(data)
+ob_c1=fn.order_book(cryptos[0],seconds,exchanges)
+ob_c2=fn.order_book(cryptos[1],seconds,exchanges)
+ob_c3=fn.order_book(cryptos[2],seconds,exchanges)
 
-# -- TEST 4 :
-# verify you can use plotly and visualize plots in web browser locally
 
-import plotly.io as pio            # to define input-output of plots
-pio.renderers.default = "browser"  # to render the plot locally in your default web browser
+#----OHLC
 
-# basic plotly plot
-plot_data = go.Figure(go.Bar(x=df['column_a'], y=df['column_b']))
-# instruction to view it in specified render (in this case browser)
-plot_data.show()
+c1m1=fn.close_prices(exchanges,cryptos[0],ob_c1,0)
+c1m2=fn.close_prices(exchanges,cryptos[0],ob_c1,1)
+c1m3=fn.close_prices(exchanges,cryptos[0],ob_c1,2)
+
+c2m1=fn.close_prices(exchanges,cryptos[1],ob_c2,0)
+c2m2=fn.close_prices(exchanges,cryptos[1],ob_c2,1)
+c2m3=fn.close_prices(exchanges,cryptos[1],ob_c2,2)
+
+c3m1=fn.close_prices(exchanges,cryptos[2],ob_c3,0)
+c3m2=fn.close_prices(exchanges,cryptos[2],ob_c3,1)
+c3m3=fn.close_prices(exchanges,cryptos[2],ob_c3,2)
+
+#----Diccionario
+
+
+d={'Exchange_1':{'Crypto1':ob_c1[0],
+                 'Closes':c1m1,
+                 'Crypto2':ob_c2[0],
+                 'Closes':c2m1,
+                 'Crypto3':ob_c3[0],
+                 'Closes':c3m1},
+  'Exchange_2':{'Crypto1':ob_c1[1],
+                 'Closes':c1m2,
+                 'Crypto2':ob_c2[1],
+                 'Closes':c2m2,
+                 'Crypto3':ob_c3[1],
+                 'Closes':c3m2},
+  'Exchange_3':{'Crypto1':ob_c1[2],
+                 'Closes':c1m3,
+                 'Crypto2':ob_c2[2],
+                 'Closes':c2m3,
+                 'Crypto3':ob_c3[2],
+                 'Closes':c3m3}}
+
+#----- Visualización de la Microestructura
+
+vac1=fn.verifavance2(ob_c1,limite,seconds,exchanges)
+vac2=fn.verifavance2(ob_c2,limite,seconds,exchanges)
+vac3=fn.verifavance2(ob_c3,limite,seconds,exchanges)
+
+#----Gráficas
+
+
+vs.visualization(vac1,cryptos[0])
+vs.visualization(vac2,cryptos[1])
+vs.visualization(vac3,cryptos[2])
+
+
+
+
+
+
+
+
