@@ -15,52 +15,55 @@ import numpy as np
 import plotly.graph_objects as go
 from datetime import datetime
 import collections
+import time
 
 
 cryptos=['BTC/USDT','BTC/USDC','ETH/USDT']
-seconds=20
 limite=20
 exchanges=[ccxt.bitmart(),ccxt.bitforex(),ccxt.bibox()]
 
 
+
 #------- Consumir datos de CCXT
 
-
-def order_book(crypto,seconds,exchanges):
+def order_book(crypto,exchanges):
     limite=20
-    now=exchanges[0].milliseconds ()
-    seconds=now - (seconds*1000) #20 segundos
     ob1,ob2,ob3=[],[],[]
-    while seconds<now:#3600
+    delay = 60 # seconds
+    now=60
+    sec=now-60
+    while sec<now:
         ob1+=collections.ChainMap(exchanges[0].fetch_order_book(crypto,limit=limite)).maps
         ob2+=collections.ChainMap(exchanges[1].fetch_order_book(crypto,limit=limite)).maps
         ob3+=collections.ChainMap(exchanges[2].fetch_order_book(crypto,limit=limite)).maps
-        seconds+=1000
+        time.sleep (delay)
+        sec+=1
     return ob1,ob2,ob3
+
 
 #-------- Fechas
 
 def times(exchanges,data):
-    exchange,times=[],[]
+    
+    times=[]
+
     for i in range(len(exchanges)):
-        exchange.append([str(exchanges[i])]*seconds)
-        for j in range(seconds):
+        for j in range(len(data[0])):
             times.append(data[i][j]['datetime'])
     return times
+
 
 #------ Descarga de close price
 
 def close_prices(exchanges,symbol,data,n):
-    seconds=20
-    time=times(exchanges,data)[seconds*n]
+    time=times(exchanges,data)[60*n]
     startDate=exchanges[n].parse8601(time)
-    ohlcv = exchanges[n].fetch_ohlcv(symbol, timeframe='1m', since=startDate,limit=20)
+    ohlcv = exchanges[n].fetch_ohlcv(symbol, timeframe='1m', since=startDate,limit=60)
     closes = [x[4] for x in ohlcv]
     dates = [exchanges[n].iso8601 (x[0]) for x in ohlcv]
     return closes,dates
 
 #--------Visualización de la Microestructura
-
 
 
 def verifavance2(data,limite,seconds,exchanges):
@@ -94,6 +97,18 @@ def verifavance2(data,limite,seconds,exchanges):
     df['total_volume']=df['ask_volume']+df['bid_volume']
     df['mid_price']=mid
     df['vwap']=sum(spread*df['total_volume'])/df['total_volume']
+    return df, spread
+
+#------ MODELO DE ROLL
+
+def verifavance3(spread, pricem1,pricem2,pricem3):
+    df=pd.DataFrame(columns=['timestamp','Close','Spread','Effective Spread'])
+    df['timestamp']=pricem1[1]+pricem2[1]+pricem3[1]
+    df['Close']=pricem1[0]+pricem2[0]+pricem3[0]
+    df['Spread']=spread
+    for i in range(len(df)-5):
+        df.loc[i+5,'Effective Spread']=2*np.sqrt(np.abs(np.cov(np.diff(df.loc[0:i+5,'Close']))))
     return df
+
 
 
